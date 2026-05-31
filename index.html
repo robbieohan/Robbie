@@ -3,91 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Robbie's Recipe Collection — beautiful recipes from around the world." />
   <title>Robbie's Recipe Collection</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header class="site-header">
+  <!-- ===== HEADER ===== -->
+  <header class="site-header" role="banner">
     <div class="header-inner">
-      <div class="logo">
-        <span class="logo-icon">&#127859;</span>
-        <div class="logo-text">
-          <h1>Robbie's Recipe Collection</h1>
-          <p class="tagline">Made with love, shared with joy</p>
+      <div class="header-top">
+        <span class="logo-icon" aria-hidden="true">🍽️</span>
+        <div class="title-block">
+          <h1 class="site-title">Robbie's Recipe Collection</h1>
+          <p class="site-subtitle">A labor of love, one dish at a time</p>
         </div>
       </div>
-    </div>
 
-    <!-- FILTER BAR -->
-    <nav class="filter-bar" role="navigation" aria-label="Cuisine filters">
-      <div class="filter-inner">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="Italian">Italian</button>
-        <button class="filter-btn" data-filter="Mexican">Mexican</button>
-        <button class="filter-btn" data-filter="Asian">Asian</button>
-        <button class="filter-btn" data-filter="American">American</button>
-        <button class="filter-btn" data-filter="Mediterranean">Mediterranean</button>
-        <button class="filter-btn" data-filter="Indian">Indian</button>
-      </div>
-    </nav>
+      <nav class="filter-bar" aria-label="Filter by cuisine">
+        <ul class="filter-list" role="list">
+          <li><button class="filter-btn active" data-filter="all" aria-pressed="true">All</button></li>
+          <li><button class="filter-btn" data-filter="Italian" aria-pressed="false">🍝 Italian</button></li>
+          <li><button class="filter-btn" data-filter="Mexican" aria-pressed="false">🌮 Mexican</button></li>
+          <li><button class="filter-btn" data-filter="Asian" aria-pressed="false">🍜 Asian</button></li>
+          <li><button class="filter-btn" data-filter="American" aria-pressed="false">🍔 American</button></li>
+          <li><button class="filter-btn" data-filter="Mediterranean" aria-pressed="false">🫒 Mediterranean</button></li>
+          <li><button class="filter-btn" data-filter="Indian" aria-pressed="false">🍛 Indian</button></li>
+          <li><button class="filter-btn" data-filter="French" aria-pressed="false">🥐 French</button></li>
+        </ul>
+      </nav>
+    </div>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
-    <div class="results-info">
-      <span id="results-count"></span>
+  <!-- ===== MAIN ===== -->
+  <main class="main-content" id="main">
+    <div class="section-intro">
+      <h2>Made with love, shared with joy</h2>
+      <p>Browse our favorite recipes from kitchens around the world. Click any card to discover the full recipe.</p>
     </div>
-    <div class="card-grid" id="card-grid"></div>
+    <div class="divider" aria-hidden="true">✦ ✦ ✦</div>
+
+    <!-- Grid populated by app.js -->
+    <div class="recipe-grid" id="recipe-grid" aria-label="Recipe cards" role="list"></div>
+
+    <!-- Empty state -->
+    <div class="no-results" id="no-results" role="status" aria-live="polite">
+      <div class="nr-emoji">🔍</div>
+      <h3>No recipes found</h3>
+      <p>Try a different cuisine filter.</p>
+    </div>
   </main>
 
-  <!-- MODAL -->
-  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal">
-      <button class="modal-close" id="modal-close" aria-label="Close recipe">&times;</button>
-      <div class="modal-image-wrap">
-        <img src="" alt="" id="modal-image" class="modal-image" />
-        <span class="modal-cuisine-badge" id="modal-cuisine"></span>
+  <!-- ===== MODAL ===== -->
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
+    <div class="modal" id="modal">
+      <!-- Image -->
+      <div class="modal-img-wrap">
+        <img id="modal-img" src="" alt="" />
+        <div class="modal-img-gradient" aria-hidden="true"></div>
+        <button class="modal-close" id="modal-close" aria-label="Close recipe">&#x2715;</button>
+        <div class="modal-title-overlay">
+          <span class="modal-cuisine-pill" id="modal-cuisine-pill"></span>
+          <h2 class="modal-title" id="modal-title-text"></h2>
+        </div>
       </div>
+
+      <!-- Body -->
       <div class="modal-body">
-        <h2 class="modal-title" id="modal-title"></h2>
-        <p class="modal-description" id="modal-description"></p>
+        <!-- Meta chips -->
+        <div class="modal-meta-row" id="modal-meta-row"></div>
 
-        <div class="modal-meta">
-          <div class="meta-item">
-            <span class="meta-label">Prep Time</span>
-            <span class="meta-value" id="modal-prep"></span>
+        <!-- Ingredients + Instructions -->
+        <div class="modal-cols">
+          <div class="modal-ingredients-col">
+            <h3 class="modal-section-title">🧂 Ingredients</h3>
+            <ul class="ingredients-list" id="modal-ingredients"></ul>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Cook Time</span>
-            <span class="meta-value" id="modal-cook"></span>
+          <div class="modal-instructions-col">
+            <h3 class="modal-section-title">👨‍🍳 Instructions</h3>
+            <ol class="instructions-list" id="modal-instructions"></ol>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Servings</span>
-            <span class="meta-value" id="modal-serves"></span>
-          </div>
-        </div>
-
-        <div class="modal-section">
-          <h3>Ingredients</h3>
-          <ul class="ingredients-list" id="modal-ingredients"></ul>
-        </div>
-
-        <div class="modal-section">
-          <h3>Instructions</h3>
-          <ol class="instructions-list" id="modal-instructions"></ol>
         </div>
       </div>
     </div>
   </div>
 
-  <footer class="site-footer">
-    <p>Made with <span class="heart">&#10084;</span> for a love of good food</p>
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer" role="contentinfo">
+    <p>Made with <strong>Robbie's Recipe Collection</strong> &nbsp;·&nbsp; Crafted with ❤️ for the love of good food</p>
   </footer>
+
+  <!-- ===== SCROLL TOP ===== -->
+  <button class="scroll-top" id="scroll-top" aria-label="Back to top">↑</button>
 
   <script src="app.js"></script>
 </body>
