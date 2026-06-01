@@ -176,23 +176,23 @@ body {
   opacity: .4;
 }
 
-/* ===== MASONRY GRID ===== */
+/* ===== GRID ===== */
 .recipe-grid {
-  columns: 4 270px;
-  column-gap: 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 22px;
 }
 
 /* ===== CARD ===== */
 .recipe-card {
-  break-inside: avoid;
   background: var(--white);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: transform .3s var(--ease), box-shadow .3s var(--ease);
-  margin-bottom: 22px;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   position: relative;
 }
@@ -854,7 +854,7 @@ body {
 
 @media (max-width: 620px) {
   .filter-list { justify-content: flex-start; padding: 0 12px; }
-  .recipe-grid { columns: 1; }
+  .recipe-grid { grid-template-columns: 1fr; }
   .modal-backdrop { padding: 10px 10px 0; align-items: flex-end; }
   .modal {
     border-radius: var(--radius-md) var(--radius-md) 0 0;
@@ -874,5 +874,5 @@ body {
 }
 
 @media (min-width: 621px) and (max-width: 960px) {
-  .recipe-grid { columns: 2 260px; }
+  .recipe-grid { grid-template-columns: repeat(2, 1fr); }
 }
