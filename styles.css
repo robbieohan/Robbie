@@ -210,13 +210,15 @@ body {
   overflow: hidden;
   background: var(--sky-mid);
   line-height: 0;
+  min-height: 200px;
 }
 .card-img {
   width: 100%;
-  height: auto;
+  height: 200px;
   display: block;
   transition: transform .5s var(--ease);
   object-fit: cover;
+  color: transparent; /* hides alt text when image fails */
 }
 .card-img-overlay {
   position: absolute;
