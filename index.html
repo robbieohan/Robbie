@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Robbie's Recipe Collection — beautiful recipes from around the world." />
-  <title>Robbie's Recipe Collection</title>
+  <meta name="description" content="Ashley O'Han's Recipes — a personal collection of favorite dishes from around the world." />
+  <title>Ashley O'Han's Recipes</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
 </head>
@@ -16,13 +16,13 @@
       <div class="header-top">
         <span class="logo-icon" aria-hidden="true">🍽️</span>
         <div class="title-block">
-          <h1 class="site-title">Robbie's Recipe Collection</h1>
-          <p class="site-subtitle">A labor of love, one dish at a time</p>
+          <h1 class="site-title">Ashley O'Han's Recipes</h1>
+          <p class="site-subtitle">A personal collection, made with love</p>
         </div>
       </div>
 
       <nav class="filter-bar" aria-label="Filter by cuisine">
-        <ul class="filter-list" role="list">
+        <ul class="filter-list" id="filter-list" role="list">
           <li><button class="filter-btn active" data-filter="all" aria-pressed="true">All</button></li>
           <li><button class="filter-btn" data-filter="Italian" aria-pressed="false">🍝 Italian</button></li>
           <li><button class="filter-btn" data-filter="Mexican" aria-pressed="false">🌮 Mexican</button></li>
@@ -40,14 +40,12 @@
   <main class="main-content" id="main">
     <div class="section-intro">
       <h2>Made with love, shared with joy</h2>
-      <p>Browse our favorite recipes from kitchens around the world. Click any card to discover the full recipe.</p>
+      <p>Browse favorite recipes from kitchens around the world. Click any card to see the full recipe.</p>
     </div>
     <div class="divider" aria-hidden="true">✦ ✦ ✦</div>
 
-    <!-- Grid populated by app.js -->
     <div class="recipe-grid" id="recipe-grid" aria-label="Recipe cards" role="list"></div>
 
-    <!-- Empty state -->
     <div class="no-results" id="no-results" role="status" aria-live="polite">
       <div class="nr-emoji">🔍</div>
       <h3>No recipes found</h3>
@@ -55,10 +53,9 @@
     </div>
   </main>
 
-  <!-- ===== MODAL ===== -->
+  <!-- ===== VIEW / EDIT MODAL ===== -->
   <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
     <div class="modal" id="modal">
-      <!-- Image -->
       <div class="modal-img-wrap">
         <img id="modal-img" src="" alt="" />
         <div class="modal-img-gradient" aria-hidden="true"></div>
@@ -69,12 +66,14 @@
         </div>
       </div>
 
-      <!-- Body -->
-      <div class="modal-body">
-        <!-- Meta chips -->
-        <div class="modal-meta-row" id="modal-meta-row"></div>
+      <!-- Edit toolbar -->
+      <div class="modal-edit-bar" id="modal-edit-bar">
+        <button class="edit-action-btn" id="btn-edit-recipe" aria-label="Edit this recipe">✏️ Edit Recipe</button>
+        <button class="edit-action-btn danger" id="btn-delete-recipe" aria-label="Delete this recipe">🗑 Delete</button>
+      </div>
 
-        <!-- Ingredients + Instructions -->
+      <div class="modal-body">
+        <div class="modal-meta-row" id="modal-meta-row"></div>
         <div class="modal-cols">
           <div class="modal-ingredients-col">
             <h3 class="modal-section-title">🧂 Ingredients</h3>
@@ -89,9 +88,95 @@
     </div>
   </div>
 
+  <!-- ===== ADD / EDIT FORM MODAL ===== -->
+  <div class="form-backdrop" id="form-backdrop" role="dialog" aria-modal="true" aria-labelledby="form-title">
+    <div class="recipe-form" id="recipe-form-el">
+      <h2 class="form-title">
+        <span id="form-title">Add New Recipe</span>
+        <button class="form-close" id="form-close" aria-label="Close form">&#x2715;</button>
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="f-name">Recipe Name</label>
+        <input class="form-input" id="f-name" type="text" placeholder="e.g. Lemon Herb Chicken" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-cuisine">Cuisine</label>
+          <select class="form-select" id="f-cuisine">
+            <option value="Italian">🍝 Italian</option>
+            <option value="Mexican">🌮 Mexican</option>
+            <option value="Asian">🍜 Asian</option>
+            <option value="American">🍔 American</option>
+            <option value="Mediterranean">🫒 Mediterranean</option>
+            <option value="Indian">🍛 Indian</option>
+            <option value="French">🥐 French</option>
+            <option value="Other">🍴 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-time">Cook Time</label>
+          <input class="form-input" id="f-time" type="text" placeholder="e.g. 30 min" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-serves">Serves</label>
+          <input class="form-input" id="f-serves" type="text" placeholder="e.g. 4 servings" />
+        </div>
+      </div>
+
+      <div class="form-row" style="grid-template-columns:1fr 1fr">
+        <div class="form-group">
+          <label class="form-label" for="f-difficulty">Difficulty</label>
+          <select class="form-select" id="f-difficulty">
+            <option value="Easy">Easy</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-description">Short Description</label>
+        <textarea class="form-textarea" id="f-description" placeholder="A brief, tasty description shown on the card…" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-image">Image URL</label>
+        <div class="img-preview-wrap" id="img-preview-wrap">
+          <div class="img-preview-placeholder" id="img-placeholder">Paste an image URL below to preview</div>
+          <img id="img-preview" src="" alt="Preview" style="display:none" />
+        </div>
+        <input class="form-input" id="f-image" type="url" placeholder="https://…" />
+        <p class="form-hint">Paste any image URL. Tip: right-click a photo online → "Copy image address"</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Ingredients</label>
+        <div class="dynamic-list" id="ingredients-list"></div>
+        <button class="add-item-btn" id="add-ingredient">+ Add Ingredient</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Instructions</label>
+        <div class="dynamic-list" id="instructions-list"></div>
+        <button class="add-item-btn" id="add-instruction">+ Add Step</button>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" id="form-cancel">Cancel</button>
+        <button class="btn-save" id="form-save">Save Recipe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FAB ===== -->
+  <button class="fab-add" id="fab-add" aria-label="Add new recipe" title="Add new recipe">+</button>
+  <div class="fab-tooltip" aria-hidden="true">Add New Recipe</div>
+
   <!-- ===== FOOTER ===== -->
   <footer class="site-footer" role="contentinfo">
-    <p>Made with <strong>Robbie's Recipe Collection</strong> &nbsp;·&nbsp; Crafted with ❤️ for the love of good food</p>
+    <p>Made with love for <strong>Ashley O'Han's Recipes</strong> &nbsp;·&nbsp; ❤️ Every dish tells a story</p>
   </footer>
 
   <!-- ===== SCROLL TOP ===== -->

@@ -477,14 +477,53 @@ const recipes = [
 /* ============================================================
    DOM REFERENCES
    ============================================================ */
-const grid        = document.getElementById('recipe-grid');
-const noResults   = document.getElementById('no-results');
-const filterBtns  = document.querySelectorAll('.filter-btn');
-const backdrop    = document.getElementById('modal-backdrop');
-const modalClose  = document.getElementById('modal-close');
-const scrollTopBtn = document.getElementById('scroll-top');
+/* ============================================================
+   STATE & DOM
+   ============================================================ */
+let nextId = recipes.reduce((max, r) => Math.max(max, r.id), 0) + 1;
+let activeFilter  = 'all';
+let currentRecipe = null; // recipe open in view modal
+let editingId     = null; // id being edited (null = new)
 
-let activeFilter = 'all';
+const grid         = document.getElementById('recipe-grid');
+const noResults    = document.getElementById('no-results');
+const filterList   = document.getElementById('filter-list');
+const backdrop     = document.getElementById('modal-backdrop');
+const modalClose   = document.getElementById('modal-close');
+const scrollTopBtn = document.getElementById('scroll-top');
+const fabAdd       = document.getElementById('fab-add');
+const formBackdrop = document.getElementById('form-backdrop');
+const formClose    = document.getElementById('form-close');
+const formCancel   = document.getElementById('form-cancel');
+const formSave     = document.getElementById('form-save');
+const imgInput     = document.getElementById('f-image');
+const imgPreview   = document.getElementById('img-preview');
+const imgPlaceholder = document.getElementById('img-placeholder');
+
+/* ============================================================
+   CUISINE FILTER TABS — rebuilt dynamically so new cuisines appear
+   ============================================================ */
+function rebuildFilterTabs() {
+  const cuisines = [...new Set(recipes.map(r => r.cuisine))].sort();
+  const emojiMap = {
+    Italian:'🍝', Mexican:'🌮', Asian:'🍜', American:'🍔',
+    Mediterranean:'🫒', Indian:'🍛', French:'🥐', Other:'🍴'
+  };
+  // keep "All" + build one tab per cuisine
+  filterList.innerHTML = `<li><button class="filter-btn ${activeFilter==='all'?'active':''}" data-filter="all" aria-pressed="${activeFilter==='all'}">All</button></li>`
+    + cuisines.map(c => `<li><button class="filter-btn ${activeFilter===c?'active':''}" data-filter="${c}" aria-pressed="${activeFilter===c}">${emojiMap[c]||'🍴'} ${c}</button></li>`).join('');
+
+  filterList.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterList.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active'); b.setAttribute('aria-pressed','false');
+      });
+      btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+      activeFilter = btn.dataset.filter;
+      renderCards(activeFilter);
+    });
+  });
+}
 
 /* ============================================================
    RENDER CARDS
@@ -506,37 +545,33 @@ function renderCards(filter) {
 
     card.innerHTML = `
       <div class="card-image-wrap">
-        <img
-          class="card-img"
-          src="${recipe.imageThumb}"
-          alt="${recipe.name}"
-          loading="lazy"
-          width="400" height="300"
-        />
+        <img class="card-img" src="${recipe.imageThumb || recipe.image}" alt="${recipe.name}" loading="lazy" width="400" height="300" />
         <div class="card-img-overlay" aria-hidden="true"></div>
-        <span class="cuisine-badge" aria-label="Cuisine: ${recipe.cuisine}">${recipe.cuisine}</span>
-        <span class="card-time-badge" aria-label="Cook time: ${recipe.time}">
-          <span aria-hidden="true">⏱</span> ${recipe.time}
-        </span>
+        <span class="cuisine-badge">${recipe.cuisine}</span>
+        <span class="card-time-badge"><span aria-hidden="true">⏱</span> ${recipe.time}</span>
+        <button class="card-edit-btn" aria-label="Edit ${recipe.name}" title="Edit recipe">✏️</button>
       </div>
       <div class="card-body">
         <h2 class="card-title">${recipe.name}</h2>
         <p class="card-desc">${recipe.description}</p>
         <div class="card-footer">
-          <span class="card-serves" aria-label="${recipe.serves}">
-            <span aria-hidden="true">👤</span> ${recipe.serves}
-          </span>
+          <span class="card-serves"><span aria-hidden="true">👤</span> ${recipe.serves}</span>
           <button class="view-btn" aria-label="View full recipe for ${recipe.name}">View Recipe</button>
         </div>
       </div>
     `;
 
+    // card click → view modal
     card.addEventListener('click', () => openModal(recipe));
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(recipe); }
     });
-    card.querySelector('.view-btn').addEventListener('click', e => {
-      e.stopPropagation(); // card click handles it
+    // view btn
+    card.querySelector('.view-btn').addEventListener('click', e => e.stopPropagation());
+    // edit pencil on card image
+    card.querySelector('.card-edit-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      openForm(recipe);
     });
 
     grid.appendChild(card);
@@ -544,91 +579,188 @@ function renderCards(filter) {
 }
 
 /* ============================================================
-   FILTER LOGIC
-   ============================================================ */
-filterBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    filterBtns.forEach(b => {
-      b.classList.remove('active');
-      b.setAttribute('aria-pressed', 'false');
-    });
-    btn.classList.add('active');
-    btn.setAttribute('aria-pressed', 'true');
-    activeFilter = btn.dataset.filter;
-    renderCards(activeFilter);
-  });
-});
-
-/* ============================================================
-   MODAL
+   VIEW MODAL
    ============================================================ */
 function openModal(recipe) {
-  document.getElementById('modal-img').src = recipe.image;
+  currentRecipe = recipe;
+  document.getElementById('modal-img').src = recipe.image || recipe.imageThumb || '';
   document.getElementById('modal-img').alt = recipe.name;
   document.getElementById('modal-cuisine-pill').textContent = recipe.cuisine;
   document.getElementById('modal-title-text').textContent = recipe.name;
 
-  // Meta chips
   document.getElementById('modal-meta-row').innerHTML = `
-    <div class="meta-chip">
-      <span class="chip-icon" aria-hidden="true">⏱</span>
-      <span>
-        <span class="chip-label">Total Time</span>
-        <span class="chip-val">${recipe.time}</span>
-      </span>
-    </div>
-    <div class="meta-chip">
-      <span class="chip-icon" aria-hidden="true">👤</span>
-      <span>
-        <span class="chip-label">Serves</span>
-        <span class="chip-val">${recipe.serves}</span>
-      </span>
-    </div>
-    <div class="meta-chip">
-      <span class="chip-icon" aria-hidden="true">📊</span>
-      <span>
-        <span class="chip-label">Difficulty</span>
-        <span class="chip-val">${recipe.difficulty}</span>
-      </span>
-    </div>
+    <div class="meta-chip"><span class="chip-icon">⏱</span><span><span class="chip-label">Total Time</span><span class="chip-val">${recipe.time}</span></span></div>
+    <div class="meta-chip"><span class="chip-icon">👤</span><span><span class="chip-label">Serves</span><span class="chip-val">${recipe.serves}</span></span></div>
+    <div class="meta-chip"><span class="chip-icon">📊</span><span><span class="chip-label">Difficulty</span><span class="chip-val">${recipe.difficulty}</span></span></div>
   `;
 
-  // Ingredients
   document.getElementById('modal-ingredients').innerHTML = recipe.ingredients
     .map(ing => `<li><span class="ing-dot" aria-hidden="true"></span>${ing}</li>`)
     .join('');
 
-  // Instructions
   document.getElementById('modal-instructions').innerHTML = recipe.instructions
-    .map((step, i) => `
-      <li>
-        <span class="step-num" aria-hidden="true">${i + 1}</span>
-        <span>${step}</span>
-      </li>`)
+    .map((step, i) => `<li><span class="step-num">${i+1}</span><span>${step}</span></li>`)
     .join('');
 
   backdrop.classList.add('open');
-  backdrop.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-
-  // Focus the close button for accessibility
   setTimeout(() => modalClose.focus(), 100);
 }
 
 function closeModal() {
   backdrop.classList.remove('open');
-  backdrop.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+  currentRecipe = null;
 }
 
 modalClose.addEventListener('click', closeModal);
+backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
 
-backdrop.addEventListener('click', e => {
-  if (e.target === backdrop) closeModal();
+// Edit / Delete buttons inside view modal
+document.getElementById('btn-edit-recipe').addEventListener('click', () => {
+  if (!currentRecipe) return;
+  closeModal();
+  openForm(currentRecipe);
 });
 
+document.getElementById('btn-delete-recipe').addEventListener('click', () => {
+  if (!currentRecipe) return;
+  if (!confirm(`Delete "${currentRecipe.name}"? This cannot be undone.`)) return;
+  const idx = recipes.findIndex(r => r.id === currentRecipe.id);
+  if (idx !== -1) recipes.splice(idx, 1);
+  closeModal();
+  rebuildFilterTabs();
+  renderCards(activeFilter);
+});
+
+/* ============================================================
+   ADD / EDIT FORM
+   ============================================================ */
+function makeDynamicItem(value, isTextarea) {
+  const wrap = document.createElement('div');
+  wrap.className = 'dynamic-item';
+  const el = document.createElement(isTextarea ? 'textarea' : 'input');
+  el.type = 'text';
+  el.value = value || '';
+  if (isTextarea) { el.rows = 2; }
+  const rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'remove-item-btn';
+  rm.setAttribute('aria-label', 'Remove');
+  rm.textContent = '×';
+  rm.addEventListener('click', () => wrap.remove());
+  wrap.appendChild(el);
+  wrap.appendChild(rm);
+  return wrap;
+}
+
+function openForm(recipe) {
+  editingId = recipe ? recipe.id : null;
+  document.getElementById('form-title').textContent = recipe ? 'Edit Recipe' : 'Add New Recipe';
+
+  // Populate fields
+  document.getElementById('f-name').value        = recipe?.name        || '';
+  document.getElementById('f-cuisine').value     = recipe?.cuisine     || 'Italian';
+  document.getElementById('f-time').value        = recipe?.time        || '';
+  document.getElementById('f-serves').value      = recipe?.serves      || '';
+  document.getElementById('f-difficulty').value  = recipe?.difficulty  || 'Medium';
+  document.getElementById('f-description').value = recipe?.description || '';
+  document.getElementById('f-image').value       = recipe?.image       || recipe?.imageThumb || '';
+  updateImgPreview(recipe?.image || recipe?.imageThumb || '');
+
+  // Ingredients
+  const ingList = document.getElementById('ingredients-list');
+  ingList.innerHTML = '';
+  (recipe?.ingredients || ['']).forEach(v => ingList.appendChild(makeDynamicItem(v, false)));
+
+  // Instructions
+  const insList = document.getElementById('instructions-list');
+  insList.innerHTML = '';
+  (recipe?.instructions || ['']).forEach(v => insList.appendChild(makeDynamicItem(v, true)));
+
+  formBackdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('f-name').focus();
+}
+
+function closeForm() {
+  formBackdrop.classList.remove('open');
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+function updateImgPreview(url) {
+  if (url) {
+    imgPreview.src = url;
+    imgPreview.style.display = 'block';
+    imgPlaceholder.style.display = 'none';
+  } else {
+    imgPreview.style.display = 'none';
+    imgPlaceholder.style.display = 'block';
+  }
+}
+
+imgInput.addEventListener('input', () => updateImgPreview(imgInput.value.trim()));
+
+document.getElementById('add-ingredient').addEventListener('click', () => {
+  document.getElementById('ingredients-list').appendChild(makeDynamicItem('', false));
+});
+document.getElementById('add-instruction').addEventListener('click', () => {
+  document.getElementById('instructions-list').appendChild(makeDynamicItem('', true));
+});
+
+fabAdd.addEventListener('click', () => openForm(null));
+formClose.addEventListener('click', closeForm);
+formCancel.addEventListener('click', closeForm);
+formBackdrop.addEventListener('click', e => { if (e.target === formBackdrop) closeForm(); });
+
+formSave.addEventListener('click', () => {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('Please enter a recipe name.'); return; }
+
+  const ingredients = [...document.getElementById('ingredients-list').querySelectorAll('input')]
+    .map(i => i.value.trim()).filter(Boolean);
+  const instructions = [...document.getElementById('instructions-list').querySelectorAll('textarea')]
+    .map(t => t.value.trim()).filter(Boolean);
+
+  if (ingredients.length === 0) { alert('Add at least one ingredient.'); return; }
+  if (instructions.length === 0) { alert('Add at least one instruction step.'); return; }
+
+  const imgUrl = document.getElementById('f-image').value.trim();
+  const data = {
+    name,
+    cuisine:     document.getElementById('f-cuisine').value,
+    time:        document.getElementById('f-time').value.trim() || '—',
+    serves:      document.getElementById('f-serves').value.trim() || '—',
+    difficulty:  document.getElementById('f-difficulty').value,
+    description: document.getElementById('f-description').value.trim(),
+    image:       imgUrl || `https://source.unsplash.com/800x600/?${encodeURIComponent(name)}`,
+    imageThumb:  imgUrl || `https://source.unsplash.com/400x300/?${encodeURIComponent(name)}`,
+    ingredients,
+    instructions,
+  };
+
+  if (editingId !== null) {
+    const idx = recipes.findIndex(r => r.id === editingId);
+    if (idx !== -1) recipes[idx] = { ...recipes[idx], ...data };
+  } else {
+    data.id = nextId++;
+    recipes.push(data);
+  }
+
+  closeForm();
+  rebuildFilterTabs();
+  renderCards(activeFilter);
+});
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal();
+  if (e.key === 'Escape') {
+    if (formBackdrop.classList.contains('open')) closeForm();
+    else if (backdrop.classList.contains('open')) closeModal();
+  }
 });
 
 /* ============================================================
@@ -645,4 +777,5 @@ scrollTopBtn.addEventListener('click', () => {
 /* ============================================================
    INIT
    ============================================================ */
+rebuildFilterTabs();
 renderCards('all');
